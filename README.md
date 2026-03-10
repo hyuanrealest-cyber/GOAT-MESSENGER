@@ -21,7 +21,7 @@
 ## 🔥 Official Support Group
 
 <p align="center">
-  <a href="https://m.me/j/AbaLu1kVZB8R-vLR/">
+  <a href="https://m.me/j/AbayU2oh5OPVLvZm/?send_source=gc%3Acopy_invite_link_c">
     <img src="https://img.shields.io/badge/Join%20Messenger%20Support%20Group-0084FF?style=for-the-badge&logo=messenger&logoColor=white" />
   </a>
 </p>
