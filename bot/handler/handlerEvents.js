@@ -214,10 +214,31 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 		let isUserCallCommand = false;
 		async function onStart() {
 			// —————————————— CHECK USE BOT —————————————— //
-			if (!body || !body.startsWith(prefix))
+			if (!body) return;
+
+			// ══════════ NO PREFIX SYSTEM ══════════
+			const noPrefixEnable = global.GoatBot.config.noPrefix?.enable === true;
+			const isAdminBot = (global.GoatBot.config.adminBot || []).includes(senderID);
+
+			let usedPrefix = prefix;
+			let bodyToParse = body;
+
+			if (body.startsWith(prefix)) {
+				bodyToParse = body;
+				usedPrefix = prefix;
+			} else if (noPrefixEnable && isAdminBot) {
+				const possibleCmd = body.trim().split(/ +/)[0].toLowerCase();
+				const cmdExists = GoatBot.commands.has(possibleCmd) || GoatBot.commands.has(GoatBot.aliases.get(possibleCmd));
+				if (!cmdExists) return;
+				usedPrefix = "";
+				bodyToParse = body;
+			} else {
 				return;
+			}
+			// ═════════════════════════════════════
+
 			const dateNow = Date.now();
-			const args = body.slice(prefix.length).trim().split(/ +/);
+			const args = bodyToParse.slice(usedPrefix.length).trim().split(/ +/);
 			// ————————————  CHECK HAS COMMAND ——————————— //
 			let commandName = args.shift().toLowerCase();
 			let command = GoatBot.commands.get(commandName) || GoatBot.commands.get(GoatBot.aliases.get(commandName));
@@ -245,7 +266,7 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 					return body_.replace(new RegExp(`^${prefix_}(\\s+|)${commandName_}`, "i"), "").trim();
 				}
 				else {
-					return body.replace(new RegExp(`^${prefix}(\\s+|)${commandName}`, "i"), "").trim();
+					return body.replace(new RegExp(`^${usedPrefix}(\\s+|)${commandName}`, "i"), "").trim();
 				}
 			}
 			// —————  CHECK BANNED OR ONLY ADMIN BOX  ————— //
