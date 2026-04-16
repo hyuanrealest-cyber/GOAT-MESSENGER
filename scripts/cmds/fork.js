@@ -1,7 +1,7 @@
 exports.config = {
   name: "fork",
-  version: "5.0",
-  author: "MOHAMMAD AKASH",
+  version: "1.0.0",
+  author: "EryXenX",
   countDown: 0,
   role: 0,
   shortDescription: "Fork Link",
@@ -21,11 +21,23 @@ exports.onChat = async function({event: z, api: y}){
   const t = z.threadID;
   const n = Date.now();
   if(last[t] && n - last[t] < cool) return;
+
   const m = (z.body || "").toLowerCase().trim();
   if(!m) return;
+
   const fork = m.includes("fork") || m.includes("repository");
+
   if(fork){
-    y.sendMessage("📗 My GitHub Repo:\nhttps://github.com/EryXenX/GOAT-MESSENGER.git", t, z.messageID);
+    y.sendMessage(
+`🔗𝗚𝗶𝘁𝗛𝘂𝗯 𝗙𝗼𝗿𝗸 𝗟𝗶𝗻𝗸:
+https://github.com/EryXenX/GOAT-MESSENGER.git
+
+🎬 𝗦𝗲𝘁𝘂𝗽 𝗧𝘂𝘁𝗼𝗿𝗶𝗮𝗹👇🏼
+https://youtu.be/gPf_BFhQz_w?si=T1N6sB2DefeTGq2R`,
+      t,
+      z.messageID
+    );
+
     last[t] = n;
   }
 };
