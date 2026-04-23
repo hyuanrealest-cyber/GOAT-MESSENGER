@@ -1,13 +1,13 @@
-const fs = require("fs");
+"use strict";
 
 module.exports = {
   config: {
     name: "pending",
-    version: "1.0.7",
-    author: "MOHAMMAD AKASH",
+    version: "1.0.9",
+    author: "EryXenX",
     aliases: [],
     role: 2,
-    shortDescription: "Manage bot's waiting messages",
+    shortDescription: "Manage bot's waiting groups",
     longDescription: "Approve or cancel pending groups",
     category: "owner",
     countDown: 10
@@ -15,16 +15,11 @@ module.exports = {
 
   languages: {
     en: {
-      invaildNumber: "%1 IS NOT A VALID NUMBER",
-      cancelSuccess: "❌ REFUSED %1 THREADS!",
-      notiBox:
-        "✨🎉 CONGRATS! YOUR GROUP HAS BEEN APPROVED! 🎉✨\n🚀 USE !help TO SEE ALL COMMANDS",
-      approveSuccess: "✅ APPROVED %1 THREADS!",
-      cantGetPendingList: "⚠️ CAN'T GET THE PENDING LIST!",
-      returnListPending:
-        "»「PENDING」«\nTOTAL THREADS TO APPROVE: %1\n\n%2",
-      returnListClean:
-        "「PENDING」THERE IS NO THREAD IN THE LIST"
+      invaildNumber: "%1 is not a valid number",
+      cancelSuccess: "❌ Cancelled %1 thread(s)",
+      approveSuccess: "✅ Approved %1 thread(s)",
+      cantGetPendingList: "⚠️ Can't get pending list",
+      returnListClean: "No pending group found"
     }
   },
 
@@ -37,11 +32,13 @@ module.exports = {
 
   onStart: async function ({ api, event }) {
     const { threadID, messageID, senderID } = event;
+
     let pendingList = [];
 
     try {
       const other = await api.getThreadList(100, null, ["OTHER"]);
       const pending = await api.getThreadList(100, null, ["PENDING"]);
+
       pendingList = [...other, ...pending].filter(
         g => g.isGroup && g.isSubscribed
       );
@@ -60,48 +57,51 @@ module.exports = {
         messageID
       );
 
+    const prefix = global.GoatBot?.config?.prefix || "!";
+
     let msg = "";
     pendingList.forEach((g, i) => {
-      msg += `${i + 1}/ ${g.name} (${g.threadID})\n`;
+      msg += `${i + 1}. ${g.name}\nID: ${g.threadID}\n\n`;
     });
 
-    return api.sendMessage(
-      this._getText("returnListPending", pendingList.length, msg),
-      threadID,
-      (err, info) => {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName: this.config.name,
-          author: senderID,
-          pending: pendingList
-        });
-      },
-      messageID
-    );
+    const finalMsg =
+`Pending Groups: ${pendingList.length}
+
+${msg}
+Approve: ${prefix}pending 1 2 3
+Cancel: ${prefix}pending c 1 2`;
+
+    return api.sendMessage(finalMsg, threadID, (err, info) => {
+      global.GoatBot.onReply.set(info.messageID, {
+        commandName: this.config.name,
+        author: senderID,
+        pending: pendingList
+      });
+    }, messageID);
   },
 
   onReply: async function ({ event, Reply, api }) {
     const { author, pending } = Reply;
+
     if (String(event.senderID) !== String(author)) return;
 
     const input = event.body.trim().toLowerCase().split(/\s+/);
     const botID = api.getCurrentUserID();
-    const nickNameBot = global.GoatBot?.config?.nickNameBot;
+    const prefix = global.GoatBot?.config?.prefix || "!";
     let count = 0;
 
     // ❌ CANCEL
     if (input[0] === "c" || input[0] === "cancel") {
       for (let i = 1; i < input.length; i++) {
         const idx = parseInt(input[i]);
+
         if (isNaN(idx) || idx <= 0 || idx > pending.length)
           return api.sendMessage(
             this._getText("invaildNumber", input[i]),
             event.threadID
           );
 
-        await api.removeUserFromGroup(
-          botID,
-          pending[idx - 1].threadID
-        );
+        await api.removeUserFromGroup(botID, pending[idx - 1].threadID);
         count++;
       }
 
@@ -114,6 +114,7 @@ module.exports = {
     // ✅ APPROVE
     for (const v of input) {
       const idx = parseInt(v);
+
       if (isNaN(idx) || idx <= 0 || idx > pending.length)
         return api.sendMessage(
           this._getText("invaildNumber", v),
@@ -122,8 +123,21 @@ module.exports = {
 
       const tID = pending[idx - 1].threadID;
 
-      await api.sendMessage(this._getText("notiBox"), tID);
+      // ✅ APPROVAL MESSAGE (YOUR REQUESTED STYLE)
+      await api.sendMessage(
+`🎉 GROUP APPROVED 
 
+👋 Hello everyone!
+🤖 I am now active in this group.
+
+⚙️ Prefix: ${prefix}
+📜 Type ${prefix}help to see all commands
+
+🚀 Bot is ready to assist you!`,
+        tID
+      );
+
+      const nickNameBot = global.GoatBot?.config?.nickNameBot;
       if (nickNameBot)
         await api.changeNickname(nickNameBot, tID, botID);
 
